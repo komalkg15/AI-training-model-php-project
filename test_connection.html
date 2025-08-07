@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .test-card h2 {
+            margin-top: 0;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <p>This page tests the connection to the backend API endpoints.</p>
+    
+    <div class="test-card">
+        <h2>Environment Information</h2>
+        <div id="env-info" class="result">Loading...</div>
+    </div>
+    
+    <div class="test-card">
+        <h2>Database Connection Test</h2>
+        <button id="test-db-btn">Test Database Connection</button>
+        <div id="db-result" class="result">Click the button to test...</div>
+    </div>
+    
+    <div class="test-card">
+        <h2>Authentication Test</h2>
+        <div class="form-group">
+            <label for="test-email">Email:</label>
+            <input type="email" id="test-email" value="test@example.com">
+        </div>
+        <div class="form-group">
+            <label for="test-password">Password:</label>
+            <input type="password" id="test-password" value="password123">
+        </div>
+        <button id="test-auth-btn">Test Authentication</button>
+        <div id="auth-result" class="result">Click the button to test...</div>
+    </div>
+    
+    <div class="test-card">
+        <h2>CORS Test</h2>
+        <button id="test-cors-btn">Test CORS Headers</button>
+        <div id="cors-result" class="result">Click the button to test...</div>
+    </div>
+
+    <script>
+        // Get the current domain for API URL construction
+        const baseUrl = window.location.origin;
+        
+        // Display environment information
+        document.getElementById('env-info').textContent = 
+            `Base URL: ${baseUrl}\n` +
+            `User Agent: ${navigator.userAgent}\n` +
+            `Protocol: ${window.location.protocol}\n` +
+            `Hostname: ${window.location.hostname}\n` +
+            `Port: ${window.location.port || '(default)'}`;
+        
+        // Test database connection
+        document.getElementById('test-db-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('db-result');
+            resultDiv.textContent = 'Testing database connection...';
+            resultDiv.className = 'result';
+            
+            try {
+                const apiUrl = new URL('test_db.php', baseUrl + '/ai-training/').href;
+                console.log('Testing DB connection at:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                
+                if (data.success) {
+                    resultDiv.classList.add('success');
+                } else {
+                    resultDiv.classList.add('error');
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.classList.add('error');
+                console.error('Database test error:', error);
+            }
+        });
+        
+        // Test authentication
+        document.getElementById('test-auth-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.textContent = 'Testing authentication...';
+            resultDiv.className = 'result';
+            
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            
+            try {
+                const apiUrl = new URL('auth.php', baseUrl + '/ai-training/').href;
+                console.log('Testing auth at:', apiUrl);
+                
+                const formData = new URLSearchParams();
+                formData.append('action', 'login');
+                formData.append('email', email);
+                formData.append('password', password);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData.toString(),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const responseHeaders = {};
+                response.headers.forEach((value, name) => {
+                    responseHeaders[name] = value;
+                });
+                
+                const responseText = await response.text();
+                let responseData;
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    responseData = { error: 'Invalid JSON response', raw: responseText };
+                }
+                
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: responseHeaders,
+                    data: responseData
+                };
+                
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+                
+                if (response.ok && responseData.success) {
+                    resultDiv.classList.add('success');
+                } else {
+                    resultDiv.classList.add('error');
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.classList.add('error');
+                console.error('Authentication test error:', error);
+            }
+        });
+        
+        // Test CORS
+        document.getElementById('test-cors-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('cors-result');
+            resultDiv.textContent = 'Testing CORS headers...';
+            resultDiv.className = 'result';
+            
+            try {
+                const apiUrl = new URL('auth.php', baseUrl + '/ai-training/').href;
+                console.log('Testing CORS at:', apiUrl);
+                
+                // First, test preflight OPTIONS request
+                const preflightResult = await fetch(apiUrl, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    },
+                    mode: 'cors'
+                });
+                
+                const preflightHeaders = {};
+                preflightResult.headers.forEach((value, name) => {
+                    preflightHeaders[name] = value;
+                });
+                
+                // Then, test actual request
+                const actualResult = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=test',
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const actualHeaders = {};
+                actualResult.headers.forEach((value, name) => {
+                    actualHeaders[name] = value;
+                });
+                
+                const result = {
+                    preflight: {
+                        status: preflightResult.status,
+                        statusText: preflightResult.statusText,
+                        headers: preflightHeaders
+                    },
+                    actual: {
+                        status: actualResult.status,
+                        statusText: actualResult.statusText,
+                        headers: actualHeaders
+                    }
+                };
+                
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+                
+                // Check if CORS is properly configured
+                const corsHeadersPresent = 
+                    preflightHeaders['access-control-allow-origin'] || 
+                    actualHeaders['access-control-allow-origin'];
+                
+                if (corsHeadersPresent) {
+                    resultDiv.classList.add('success');
+                } else {
+                    resultDiv.classList.add('error');
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.classList.add('error');
+                console.error('CORS test error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

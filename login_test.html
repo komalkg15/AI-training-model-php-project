@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .test-card h2 {
+            margin-top: 0;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Login Test</h1>
+    <p>This page tests the login functionality with the test user account.</p>
+    
+    <div class="test-card">
+        <h2>Test User Login</h2>
+        <div class="form-group">
+            <label for="test-email">Email:</label>
+            <input type="email" id="test-email" value="test@example.com">
+        </div>
+        <div class="form-group">
+            <label for="test-password">Password:</label>
+            <input type="password" id="test-password" value="password123">
+        </div>
+        <button id="test-login-btn">Test Login</button>
+        <div id="login-result" class="result">Click the button to test...</div>
+    </div>
+    
+    <div class="test-card">
+        <h2>Admin User Login</h2>
+        <div class="form-group">
+            <label for="admin-email">Email:</label>
+            <input type="email" id="admin-email" value="admin@example.com">
+        </div>
+        <div class="form-group">
+            <label for="admin-password">Password:</label>
+            <input type="password" id="admin-password" value="admin123">
+        </div>
+        <button id="admin-login-btn">Test Admin Login</button>
+        <div id="admin-result" class="result">Click the button to test...</div>
+    </div>
+
+    <script>
+        // Get the current domain for API URL construction
+        const baseUrl = window.location.origin;
+        
+        // Test user login
+        document.getElementById('test-login-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.textContent = 'Testing login...';
+            resultDiv.className = 'result';
+            
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            
+            try {
+                const apiUrl = new URL('auth.php', baseUrl + '/ai-training/').href;
+                console.log('Testing login at:', apiUrl);
+                
+                const formData = new URLSearchParams();
+                formData.append('action', 'login');
+                formData.append('email', email);
+                formData.append('password', password);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData.toString(),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const responseHeaders = {};
+                response.headers.forEach((value, name) => {
+                    responseHeaders[name] = value;
+                });
+                
+                const responseText = await response.text();
+                let responseData;
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    responseData = { error: 'Invalid JSON response', raw: responseText };
+                }
+                
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: responseHeaders,
+                    data: responseData
+                };
+                
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+                
+                if (response.ok && responseData.success) {
+                    resultDiv.classList.add('success');
+                } else {
+                    resultDiv.classList.add('error');
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.classList.add('error');
+                console.error('Login test error:', error);
+            }
+        });
+        
+        // Test admin login
+        document.getElementById('admin-login-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('admin-result');
+            resultDiv.textContent = 'Testing admin login...';
+            resultDiv.className = 'result';
+            
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            
+            try {
+                const apiUrl = new URL('auth.php', baseUrl + '/ai-training/').href;
+                console.log('Testing admin login at:', apiUrl);
+                
+                const formData = new URLSearchParams();
+                formData.append('action', 'login');
+                formData.append('email', email);
+                formData.append('password', password);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData.toString(),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const responseHeaders = {};
+                response.headers.forEach((value, name) => {
+                    responseHeaders[name] = value;
+                });
+                
+                const responseText = await response.text();
+                let responseData;
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    responseData = { error: 'Invalid JSON response', raw: responseText };
+                }
+                
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: responseHeaders,
+                    data: responseData
+                };
+                
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+                
+                if (response.ok && responseData.success) {
+                    resultDiv.classList.add('success');
+                } else {
+                    resultDiv.classList.add('error');
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.classList.add('error');
+                console.error('Admin login test error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
